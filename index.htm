@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WAR ROOM</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Chart.js (gráficos) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- html2canvas (screenshot) -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <!-- jsPDF (PDF) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <header class="header">
+    <h1>WAR ROOM </h1>
+    <div class="header-actions">
+      <button id="refreshBtn">Atualizar agora</button>
+      <button id="exportPngBtn">Exportar PNG</button>
+      <button id="exportPdfBtn">Exportar PDF</button>
+      <button id="sendBtn">Enviar por e-mail</button>
+    </div>
+    <small id="lastUpdate">Última atualização: —</small>
+  </header>
+
+  <main id="dashboard">
+    <section class="grid">
+      <!-- Tendência Mensal -->
+      <div class="card">
+        <h3>Tendência Mensal</h3>
+        <canvas id="tendenciaMensal"></canvas>
+      </div>
+
+      <!-- Tendência Afetação -->
+      <div class="card">
+        <h3>Tendência Afetação</h3>
+        <canvas id="tendenciaAfetacao"></canvas>
+      </div>
+
+      <!-- Status Litoral D‑0 (Donut) -->
+      <div class="card">
+        <h3>Status Litoral D‑0</h3>
+        <canvas id="statusLitoral"></canvas>
+        <div class="legend">
+          <span class="pill pill-blue">EM ANDAMENTO</span>
+          <span class="pill pill-gray">NÃO INICIADA</span>
+          <span class="pill pill-green">ENCERRADA</span>
+        </div>
+      </div>
+
+      <!-- Status SJC D‑0 (Donut) -->
+      <div class="card">
+        <h3>Status SJC D‑0</h3>
+        <canvas id="statusSJC"></canvas>
+        <div class="legend">
+          <span class="pill pill-blue">EM ANDAMENTO</span>
+          <span class="pill pill-gray">NÃO INICIADA</span>
+          <span class="pill pill-green">ENCERRADA</span>
+        </div>
+      </div>
+
+      <!-- maior  que 24 hrs -->
+      <div class="card card-half">
+        <h3>OCs acima de 24 hrs</h3>
+        <canvas id="ocPorAtLitoral"></canvas>
+      </div>
+
+      <!-- OCs por AT  -->
+      <div class="card card-half">
+        <h3>OCs por AT </h3>
+        <canvas id="ocPorAtSJC"></canvas>
+      </div>
+
+      <!-- KPIs LITORAL: 4 blocos roxos na MESMA linha (ocupa 12 colunas) -->
+      <div class="kpi kpi-purple">
+        <h4>Encerrado Litoral</h4>
+        <div id="encerradoLitoral" class="kpi-value">0</div>
+      </div>
+      <div class="kpi kpi-purple">
+        <h4>Total OCs Litoral</h4>
+        <div id="totalOcLitoral" class="kpi-value">0</div>
+      </div>
+      <div class="kpi kpi-purple">
+        <h4>OCs &gt; 24h Litoral</h4>
+        <div id="oc24hLitoral" class="kpi-value">0</div>
+      </div>
+      <div class="kpi kpi-purple">
+        <h4>OC Aberto Litoral</h4>
+        <div id="ocAbertoLitoral" class="kpi-value">0</div>
+      </div>
+
+      <!-- KPIs SJC: 4 blocos roxos na linha seguinte (também 12 colunas) -->
+      <div class="kpi kpi-purple">
+        <h4>Encerrado SJC</h4>
+        <div id="encerradoSJC" class="kpi-value">0</div>
+      </div>
+      <div class="kpi kpi-purple">
+        <h4>Total OCs SJC</h4>
+        <div id="totalOcSJC" class="kpi-value">0</div>
+      </div>
+      <div class="kpi kpi-purple">
+        <h4>OCs &gt; 24h SJC</h4>
+        <div id="oc24hSJC" class="kpi-value">0</div>
+      </div>
+      <div class="kpi kpi-purple">
+        <h4>OC Aberto SJC</h4>
+        <div id="ocAbertoSJC" class="kpi-value">0</div>
+      </div>
+
+      <!-- Série temporal -->
+      <div class="card card-wide">
+        <h3>OCs Diarizado</h3>
+        <canvas id="ocsDiarizado"></canvas>
+        <div class="legend">
+          <span class="pill pill-orange">ABERTO</span>
+          <span class="pill pill-teal">FECHADO</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>© Operação</small>
+  </footer>
+
+  <!-- JS do app (inalterado) -->
+  <script src="app.js"></script>
+</body>
+</html>

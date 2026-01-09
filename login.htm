@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>War Room — Acesso</title>
+  <link rel="stylesheet" href="css/login.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <h1>WAR ROOM</h1>
+      <small class="subtitle">Acesso ao painel operacional</small>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="login-card" role="form" aria-label="Formulário de login">
+      <h2>Entrar</h2>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="email">E‑mail</label>
+          <input type="email" id="email" name="email" placeholder="seu.email@empresa.com" autocomplete="username" required />
+          <small class="error" id="emailError"></small>
+        </div>
+
+        <div class="field">
+          <label for="password">Senha</label>
+          <div class="password-wrap">
+            <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+            <button type="button" id="togglePassword" aria-label="Mostrar/ocultar senha">👁️</button>
+          </div>
+          <small class="error" id="passwordError"></small>
+        </div>
+
+        <div class="options">
+          <label class="remember">
+            <input type="checkbox" id="rememberMe" />
+            Lembrar-me neste dispositivo
+          </label>
+          <a href="#" class="link" id="forgotLink">Esqueci minha senha</a>
+        </div>
+
+        <button type="submit" class="btn-primary" id="loginBtn">Acessar</button>
+
+        <div class="feedback" id="loginFeedback" aria-live="polite"></div>
+      </form>
+
+      <div class="help">
+        <small>Precisa de acesso? Fale com o suporte ou com a coordenação para criar sua conta.</small>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <small>© 2026 — Operação Litoral Norte</small>
+    </div>
+  </footer>
+
+  <script src="login.js"></script>
+</body>
+</html>

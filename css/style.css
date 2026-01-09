@@ -1,0 +1,148 @@
+
+:root{
+    --bg:#f2f4f8;
+    --card:#ffffff;
+    --primary:#660099;
+    --dark:#0b314d;
+    --blue:#7516e2;
+    --orange:#f59e0b;
+    --teal:#14b8a6;
+    --gray:#6b7280;
+    --green:#22c55e;
+    --purple:#660099; /* roxo dos KPIs */
+  }
+  
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',sans-serif;
+    background:var(--bg);
+    color:#0a0099;
+  }
+  
+  /* Header */
+  .header{
+    background:linear-gradient(180deg,#e8eef6,#dbe6f3);
+    padding:16px 20px;
+    border-bottom:2px solid #cbd5e1;
+  }
+  .header h1{
+    margin:0 0 8px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--blue);
+  }
+  .header-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:8px 0;
+  }
+  .header-actions button{
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .header-actions button:hover{ opacity:.9; }
+  #lastUpdate{ color:#475569; }
+  
+  /* Main */
+  main{ padding:16px 20px; }
+  
+  /* Grade principal: 12 colunas, padrão inicial */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap:12px;
+  }
+  
+  /* Cards padrão (blocos finos) */
+  .card{
+    background:var(--card);
+    border-radius:8px;
+    padding:12px;
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
+    grid-column: span 3; /* padrão: 3 colunas por card fino */
+  }
+  .card h3{
+    margin-top:0;
+    color:var(--dark);
+    font-weight:600;
+  }
+  
+  /* Dois cards meia largura (OCs por AT) */
+  .card-half{ grid-column: span 6; }
+  
+  /* Card largo (série temporal) */
+  .card-wide{ grid-column: span 12; }
+  
+  /* Legend pills */
+  .legend{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+  .pill{
+    display:inline-block;
+    padding:4px 8px;
+    border-radius:999px;
+    font-size:12px;
+    color:#fff;
+  }
+  .pill-blue{ background:#2563eb; }
+  .pill-gray{ background:#64748b; }
+  .pill-green{ background:#16a34a; }
+  .pill-orange{ background:var(--orange); }
+  .pill-teal{ background:var(--teal); }
+  
+  /* ===========================
+     KPIs (ajustes pedidos)
+     =========================== */
+  
+  /* Cada KPI ocupa 3 colunas -> 4 por linha = largura total da página */
+  .kpi{
+    grid-column: span 3;
+    background: var(--purple);
+    color:#fff;
+    border-radius:8px;
+    padding:12px;
+    text-align:center;
+  
+    /* Altura fina (~2 cm ≈ 75.6px) */
+    min-height: 75.6px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  
+    box-shadow:0 1px 3px rgba(0,0,0,.1);
+  }
+  
+  /* Tipografia dos KPIs */
+  .kpi h4{
+    margin:0 0 6px;
+    font-weight:500;
+    font-size:14px;
+  }
+  .kpi-value{
+    font-size:32px;
+    font-weight:700;
+    line-height:1;
+  }
+  
+  /* Footer */
+  .footer{
+    padding:12px 20px;
+    text-align:center;
+    color:#475569;
+  }
+  
+  /* Responsivo (mantém padrão original) */
+  @media (max-width: 1024px){
+    .card{ grid-column: span 6; } /* cards finos viram meio de linha */
+    .card-half{ grid-column: span 12; } /* os "meia largura" ocupam linha inteira */
+    .kpi{ grid-column: span 6; }  /* KPIs: 2 por linha em tablet */
+  }
+  @media (max-width: 640px){
+    .card, .card-half, .card-wide{ grid-column: span 12; } /* uma coluna no mobile */
+    .kpi{ grid-column: span 12; }  /* KPIs: 1 por linha no mobile */
+  }
+  

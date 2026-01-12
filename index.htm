@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WAR ROOM - ABILITY_SJ (Online)</title>
+  <title>WAR ROOM - ABILITY_SJ</title>
   <link rel="stylesheet" href="css/style.css" />
-  
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
   <header class="header">
     <div class="header-top">
       <h1>WAR ROOM <span class="brand-tag">ABILITY_SJ</span></h1>
-      <small id="lastUpdate" style="font-weight:bold; color:#eab308;">Conectando API...</small>
+      <small id="lastUpdate" style="font-weight:bold; color:#eab308">Conectando...</small>
     </div>
     
     <div class="filter-bar">
       <div class="filter-group-labeled">
         <label>HISTÓRICO:</label>
-        <select id="yearSelect" class="styled-select"><option>Carregando...</option></select>
+        <select id="yearSelect" class="styled-select"></select>
         <select id="monthSelect" class="styled-select">
           <option value="0">Selecione Mês</option>
           <option value="1">Janeiro</option>
@@ -39,7 +37,6 @@
         <button id="btnHistory" class="action-btn">IR</button>
       </div>
       <div class="filter-divider"></div>
-      
       <div class="filter-group">
         <button class="filter-btn active" data-view="d0">D-0 (Hoje)</button>
         <button class="filter-btn" data-view="d1">D-1</button>
@@ -50,61 +47,72 @@
         <button class="filter-btn" data-view="semana">Semana</button>
         <button class="filter-btn" data-view="quinzena">Quinzena</button>
       </div>
-      
       <div class="header-actions">
-        <button id="refreshBtn" title="Forçar Atualização">↻ API</button>
-        <button id="exportPngBtn">PNG</button>
+        <button id="refreshBtn">↻</button>
       </div>
     </div>
   </header>
 
   <main id="dashboard">
     <section class="grid">
+      
       <div class="card card-half">
-        <div class="card-header"><h3>Backlog Litoral</h3><span id="valBackLit" class="card-value">-</span></div>
+        <div class="card-header"><h3>Backlog Litoral (Acumulado)</h3><span id="valBackLit" class="card-value">0</span></div>
         <div style="display:flex; height:200px;">
-            <div style="width:40%"><canvas id="chartBackLit"></canvas></div>
-            <div class="list-container" id="listBackLit" style="width:60%"></div>
-        </div>
-      </div>
-      <div class="card card-half">
-        <div class="card-header"><h3>Backlog SJC</h3><span id="valBackSJC" class="card-value">-</span></div>
-        <div style="display:flex; height:200px;">
-            <div style="width:40%"><canvas id="chartBackSJC"></canvas></div>
-            <div class="list-container" id="listBackSJC" style="width:60%"></div>
+            <div style="width:40%; position:relative;"><canvas id="chartBackLit"></canvas></div>
+            <div class="list-container" id="listBackLit" style="width:60%; border-left:1px solid #eee;"></div>
         </div>
       </div>
 
-      <div class="card"><div class="card-header"><h3>Status Litoral</h3></div><div class="chart-container"><canvas id="statusLit"></canvas></div></div>
-      <div class="card"><div class="card-header"><h3>Status SJC</h3></div><div class="chart-container"><canvas id="statusSJC"></canvas></div></div>
+      <div class="card card-half">
+        <div class="card-header"><h3>Backlog SJC (Acumulado)</h3><span id="valBackSJC" class="card-value">0</span></div>
+        <div style="display:flex; height:200px;">
+            <div style="width:40%; position:relative;"><canvas id="chartBackSJC"></canvas></div>
+            <div class="list-container" id="listBackSJC" style="width:60%; border-left:1px solid #eee;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Status Litoral</h3></div>
+        <div class="chart-container"><canvas id="statusLit"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Status SJC</h3></div>
+        <div class="chart-container"><canvas id="statusSJC"></canvas></div>
+      </div>
 
       <div class="card card-half" style="background:#fff1f2; border:1px solid #fecdd3">
-        <div class="card-header"><h3 style="color:#be123c">Críticos > 24h (Lit)</h3></div>
-        <div class="table-responsive"><table class="data-table" id="tableCritLit"><thead><tr><th>OC</th><th>AT</th><th>Aging</th></tr></thead><tbody></tbody></table></div>
+        <div class="card-header"><h3 style="color:#be123c">Críticos > 24h (Litoral)</h3></div>
+        <div class="table-responsive"><table class="data-table" id="tableCritLit"><thead><tr><th>Categoria</th><th>Qtd</th><th>Status</th></tr></thead><tbody></tbody></table></div>
       </div>
       <div class="card card-half" style="background:#fff1f2; border:1px solid #fecdd3">
         <div class="card-header"><h3 style="color:#be123c">Críticos > 24h (SJC)</h3></div>
-        <div class="table-responsive"><table class="data-table" id="tableCritSJC"><thead><tr><th>OC</th><th>AT</th><th>Aging</th></tr></thead><tbody></tbody></table></div>
+        <div class="table-responsive"><table class="data-table" id="tableCritSJC"><thead><tr><th>Categoria</th><th>Qtd</th><th>Status</th></tr></thead><tbody></tbody></table></div>
       </div>
 
-      <div class="card"><div class="card-header"><h3>SLA Fechamento (Lit)</h3></div><div class="chart-container"><canvas id="slaLit"></canvas></div></div>
-      <div class="card"><div class="card-header"><h3>SLA Fechamento (SJC)</h3></div><div class="chart-container"><canvas id="slaSJC"></canvas></div></div>
+      <div class="card">
+        <div class="card-header"><h3>SLA Fechamento (Litoral)</h3></div>
+        <div class="chart-container"><canvas id="slaLit"></canvas></div>
+        <div class="legend"><span class="pill pill-green">DENTRO</span><span class="pill pill-red">FORA</span></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>SLA Fechamento (SJC)</h3></div>
+        <div class="chart-container"><canvas id="slaSJC"></canvas></div>
+        <div class="legend"><span class="pill pill-green">DENTRO</span><span class="pill pill-red">FORA</span></div>
+      </div>
 
       <div class="card card-wide" style="background:#f0f9ff; border:1px solid #bae6fd">
-        <div class="card-header"><h3 style="color:#0369a1">💎 VIP / Hunter</h3></div>
+        <div class="card-header"><h3 style="color:#0369a1">💎 Casos Especiais (VIP / Hunter)</h3></div>
         <div style="display:flex; gap:20px;">
             <div style="flex:1;"><h4>LITORAL</h4><div class="list-container" id="listVipLit" style="height:150px;"></div></div>
             <div style="width:1px; background:#cbd5e1;"></div>
             <div style="flex:1;"><h4>SJC</h4><div class="list-container" id="listVipSJC" style="height:150px;"></div></div>
         </div>
       </div>
-      
-      <div class="card"><div class="card-header"><h3>Volume Anual</h3><span id="valTendenciaMensal" class="card-value">-</span></div><div class="chart-container"><canvas id="tendenciaMensal"></canvas></div></div>
-      <div class="card"><div class="card-header"><h3>Afetação Anual</h3><span id="valTendenciaAfetacao" class="card-value">-</span></div><div class="chart-container"><canvas id="tendenciaAfetacao"></canvas></div></div>
 
     </section>
   </main>
-
+  
   <script src="js/app.js"></script>
 </body>
 </html>

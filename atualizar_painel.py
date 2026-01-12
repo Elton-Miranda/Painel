@@ -3,239 +3,283 @@ import json
 import datetime
 import os
 import glob
+import numpy as np
 
 # --- CONFIGURAÇÕES ---
 ARQUIVO_SAIDA = 'dados.js'
 FILTRO_CONTRATADA = 'ABILITY_SJ'
 
-# Mapeamento de Cidades
+# Mapeamento Geográfico
 SJC_CITIES = ['SAO JOSE DOS CAMPOS', 'JACAREI', 'TAUBATE', 'CACAPAVA', 'PINDAMONHANGABA', 'GUARATINGUETA', 'APARECIDA', 'CAMPOS DO JORDAO', 'TREMEMBE', 'CRUZEIRO', 'LORENA', 'POTIM', 'ROSEIRA']
 LITORAL_CITIES = ['SAO SEBASTIAO', 'ILHABELA', 'CARAGUATATUBA', 'UBATUBA', 'SANTOS', 'SAO VICENTE', 'GUARUJA', 'PRAIA GRANDE', 'MONGAGUA', 'ITANHAEM', 'PERUIBE', 'BERTIOGA', 'CUBATAO']
 
-def detectar_arquivos_dados():
-    arquivos = glob.glob('*.txt') + glob.glob('*.TXT') + glob.glob('*.csv') + glob.glob('*.CSV')
-    validos = []
-    print(f"Varrendo {len(arquivos)} arquivos...")
-    for arq in arquivos:
-        if arq == ARQUIVO_SAIDA: continue
-        try:
-            with open(arq, 'r', encoding='latin1') as f:
-                header = f.readline()
-            if 'MUNICIPIO' in header and 'CONTRATADA' in header:
-                print(f"  [OK] Identificado: {arq}")
-                validos.append(arq)
-        except: pass
-    return validos
-
 def load_data():
-    arquivos = detectar_arquivos_dados()
-    if not arquivos: return pd.DataFrame()
-
     dfs = []
-    for arq in arquivos:
+    
+    # Procura arquivos CSV e XLSX na pasta
+    files = glob.glob('*.csv') + glob.glob('*.xlsx') + glob.glob('*.txt')
+    
+    print(f"Arquivos encontrados: {files}")
+    
+    for f in files:
+        if f == ARQUIVO_SAIDA: continue
         try:
-            df = pd.read_csv(arq, sep='|', encoding='latin1', on_bad_lines='skip', low_memory=False)
-            df.columns = df.columns.str.strip()
-            dfs.append(df)
+            print(f"Lendo: {f}...")
+            # Detecta extensão para usar o leitor correto
+            if f.lower().endswith('.xlsx'):
+                df_temp = pd.read_excel(f, engine='openpyxl')
+            elif f.lower().endswith('.csv'):
+                # Tenta encoding latin1 para CSVs brasileiros
+                df_temp = pd.read_csv(f, encoding='latin1', on_bad_lines='skip')
+            else:
+                # Tenta ler TXT com separador pipe
+                df_temp = pd.read_csv(f, sep='|', encoding='latin1', on_bad_lines='skip', low_memory=False)
+
+            # Normalização de Nomes de Coluna
+            # Mapeia nomes possíveis para o padrão interno
+            rename_map = {
+                'ocorrencia': 'ID', 'ID_OCORRENCIA': 'ID',
+                'abertura': 'DT_OPEN', 'DATA_OCORRENCIA': 'DT_OPEN',
+                'encerramento': 'DT_CLOSE', 'DATA_OCORRENCIA_FINAL': 'DT_CLOSE', 'data_fim': 'DT_CLOSE',
+                'status': 'STATUS', 'STATUS': 'STATUS',
+                'municipio': 'CITY', 'MUNICIPIO': 'CITY',
+                'contrato': 'CONTRACT', 'CONTRATADA': 'CONTRACT',
+                'at': 'AT', 'AT': 'AT',
+                'b2b_avancado': 'B2B', 'B2B_AVANCADO': 'B2B',
+                'vip': 'VIP', 'CLIENTE_VIP': 'VIP',
+                'cond_alto_valor': 'HUNTER', 'HUNTER': 'HUNTER',
+                'propensos_anatel': 'INFLUENCER', 'INFLUENCIADOR': 'INFLUENCER'
+            }
+            df_temp.rename(columns=rename_map, inplace=True)
+            
+            # Valida se tem colunas mínimas
+            if 'ID' in df_temp.columns and 'DT_OPEN' in df_temp.columns:
+                # Garante colunas opcionais
+                for col in ['B2B', 'VIP', 'HUNTER', 'INFLUENCER', 'DT_CLOSE']:
+                    if col not in df_temp.columns: df_temp[col] = np.nan
+                
+                # Seleciona apenas colunas padrão para evitar erro de concatenação
+                cols = ['ID', 'DT_OPEN', 'DT_CLOSE', 'STATUS', 'CITY', 'CONTRACT', 'AT', 'B2B', 'VIP', 'HUNTER', 'INFLUENCER']
+                # Adiciona apenas as que existem
+                cols_final = [c for c in cols if c in df_temp.columns]
+                
+                dfs.append(df_temp[cols_final])
+                print(f"  -> {len(df_temp)} registros importados.")
+            else:
+                print("  -> Ignorado (Colunas obrigatórias ausentes).")
+                
         except Exception as e:
-            print(f"  [ERRO] {arq}: {e}")
+            print(f"  [ERRO] Falha ao ler {f}: {e}")
 
     if not dfs: return pd.DataFrame()
-
+    
     print("Consolidando bases...")
-    df_final = pd.concat(dfs, ignore_index=True)
-
-    if 'ID_OCORRENCIA' in df_final.columns:
-        df_final.drop_duplicates(subset='ID_OCORRENCIA', keep='last', inplace=True)
+    df = pd.concat(dfs, ignore_index=True)
     
-    df_final['DATA_OCORRENCIA'] = pd.to_datetime(df_final['DATA_OCORRENCIA'], errors='coerce')
-    df_final['DATA_OCORRENCIA_FINAL'] = pd.to_datetime(df_final['DATA_OCORRENCIA_FINAL'], errors='coerce')
+    # Limpeza e Tipagem
+    df.drop_duplicates(subset='ID', keep='first', inplace=True)
     
-    if 'CONTRATADA' in df_final.columns:
-        df_final['CONTRATADA'] = df_final['CONTRATADA'].astype(str).str.strip().str.upper()
+    # Datas (Tenta vários formatos)
+    df['DT_OPEN'] = pd.to_datetime(df['DT_OPEN'], dayfirst=True, errors='coerce')
+    df['DT_CLOSE'] = pd.to_datetime(df['DT_CLOSE'], dayfirst=True, errors='coerce')
     
-    df_final['REGION'] = df_final['MUNICIPIO'].apply(get_region)
-    df_final['DASH_STATUS'] = df_final['STATUS'].apply(get_dashboard_status)
+    # Remove sem data
+    df.dropna(subset=['DT_OPEN'], inplace=True)
+    
+    # Strings
+    df['CONTRACT'] = df['CONTRACT'].astype(str).str.strip().str.upper()
+    df['STATUS'] = df['STATUS'].astype(str).str.strip().str.upper()
+    df['CITY'] = df['CITY'].astype(str).str.strip().str.upper()
+    
+    # Região
+    def get_region(city):
+        if city in SJC_CITIES: return 'SJC'
+        if city in LITORAL_CITIES: return 'LITORAL'
+        return 'OUTROS'
+    df['REGION'] = df['CITY'].apply(get_region)
+    
+    # Flag Aberto
+    fechados = ['ENCERRADA', 'FECHADO', 'FINALIZADO', 'CANCELADO', 'IMPROCEDIDO', 'EXECUTADO', 'CONCLUIDO']
+    df['IS_OPEN_NOW'] = df['STATUS'].apply(lambda x: 0 if any(s in x for s in fechados) else 1)
+    
+    # Numéricos
+    for c in ['B2B', 'VIP', 'HUNTER']:
+        df[c] = pd.to_numeric(df[c], errors='coerce').fillna(0)
+        
+    return df
 
-    return df_final
+def calc_aging_str(hours):
+    if pd.isna(hours) or hours < 0: return "-"
+    d, h = int(hours // 24), int(hours % 24)
+    return f"{d}d {h}h" if d > 0 else f"{h}h"
 
-def get_region(city):
-    city = str(city).upper().strip()
-    if city in SJC_CITIES: return 'SJC'
-    if city in LITORAL_CITIES: return 'LITORAL'
-    return 'OUTROS'
-
-def get_dashboard_status(status):
-    status = str(status).upper().strip()
-    if status in ['FECHADO', 'IMPROCEDIDO', 'CANCELADO', 'ENCERRADO']: return 'ENCERRADA'
-    if status == 'ABERTO': return 'NÃO INICIADA'
-    if status == 'ASSOCIADO': return 'EM ANDAMENTO'
-    return 'NÃO INICIADA'
-
-def get_bar_status(dash_status):
-    if dash_status == 'EM ANDAMENTO': return 'EM EXECUÇÃO'
-    if dash_status == 'NÃO INICIADA': return 'AGUARDANDO'
-    return 'ENCERRADA'
-
-# --- CÁLCULOS FILTRADOS ---
-def calculate_metrics(df_filtrado, now_ref):
-    """
-    Calcula TODAS as métricas usando APENAS o dataframe filtrado pelo período.
-    Isso garante que ao clicar em D-1, só vejamos dados de D-1.
-    """
+def get_snapshot_metrics(df, start_date, end_date):
+    """Gera o retrato fiel do período."""
     data = {}
+    snapshot_point = end_date # Momento "Fim do Dia" para cálculo de status
     
-    # Separação Regional
-    df_lit = df_filtrado[df_filtrado['REGION'] == 'LITORAL']
-    df_sjc = df_filtrado[df_filtrado['REGION'] == 'SJC']
+    # 1. BACKLOG (Legado) - O que vinha de antes e ainda estava lá
+    # Criados ANTES do início E (Fechados DEPOIS do início OU Abertos)
+    mask_back = (df['DT_OPEN'] < start_date) & ((df['DT_CLOSE'] >= start_date) | (df['DT_CLOSE'].isna()))
+    df_back = df[mask_back].copy()
+    df_back['AGING'] = (snapshot_point - df_back['DT_OPEN']).dt.total_seconds() / 3600
+    
+    backlog = {"sjc": {"count":0, "cases":[]}, "litoral": {"count":0, "cases":[]}}
+    for reg in ['SJC', 'LITORAL']:
+        sub = df_back[df_back['REGION'] == reg].sort_values('AGING', ascending=False)
+        backlog[reg.lower()]['count'] = len(sub)
+        for _, r in sub.head(50).iterrows():
+            backlog[reg.lower()]['cases'].append({
+                "id": r['ID'], "at": str(r['AT']), "aging": calc_aging_str(r['AGING'])
+            })
+    data['backlog'] = backlog
 
-    # 1. Status (Donuts) - Só do período
-    for k, d in [('status_litoral', df_lit), ('status_sjc', df_sjc)]:
-        c = d['DASH_STATUS'].value_counts()
-        data[k] = {
-            "em_andamento": int(c.get('EM ANDAMENTO',0)), 
-            "nao_iniciada": int(c.get('NÃO INICIADA',0)), 
-            "encerrada": int(c.get('ENCERRADA',0))
+    # 2. STATUS (Produção do Período)
+    # Criados DENTRO do período
+    mask_new = (df['DT_OPEN'] >= start_date) & (df['DT_OPEN'] <= end_date)
+    df_new = df[mask_new].copy()
+    
+    # Fechado DENTRO do período?
+    df_new['CLOSED_IN_PERIOD'] = df_new['DT_CLOSE'].apply(lambda x: 1 if pd.notna(x) and x <= end_date else 0)
+    
+    status = {"sjc": {}, "litoral": {}}
+    for reg in ['SJC', 'LITORAL']:
+        sub = df_new[df_new['REGION'] == reg]
+        status[reg.lower()] = {
+            "aberto": len(sub[sub['CLOSED_IN_PERIOD'] == 0]),
+            "fechado": len(sub[sub['CLOSED_IN_PERIOD'] == 1])
         }
-    
-    # 2. Detalhe (Barras) - Só do período
-    for k, d in [('oc_por_at_litoral', df_lit), ('oc_por_at_sjc', df_sjc)]:
-        bc = d['DASH_STATUS'].apply(get_bar_status).value_counts()
-        data[k] = [{"at": key, "qtd": int(val)} for key, val in bc.items()]
+    data['status'] = status
 
-    # 3. KPIs Roxos - Só do período
-    data['kpis_litoral'] = calculate_simple_kpis(df_lit, now_ref)
-    data['kpis_sjc'] = calculate_simple_kpis(df_sjc, now_ref)
-
-    # 4. Fluxo (Entrada/Saída) - Só do período
-    data['fluxo'] = {
-        "entrada": int(len(df_filtrado)), 
-        "saida": int(len(df_filtrado[df_filtrado['DASH_STATUS'] == 'ENCERRADA']))
-    }
+    # 3. CRÍTICOS > 24H (Situação no Fim do Período)
+    # Todo mundo que estava aberto em `end_date` com idade > 24h
+    mask_active = (df['DT_OPEN'] <= end_date) & ((df['DT_CLOSE'] > end_date) | (df['DT_CLOSE'].isna()))
+    df_active = df[mask_active].copy()
+    df_active['AGING'] = (snapshot_point - df_active['DT_OPEN']).dt.total_seconds() / 3600
     
-    # 5. Diarizado - Só do período (mostra a evolução dentro do recorte)
-    daily_open = df_filtrado.groupby(df_filtrado['DATA_OCORRENCIA'].dt.date).size()
-    daily_close = df_filtrado.groupby(df_filtrado['DATA_OCORRENCIA_FINAL'].dt.date).size()
-    all_dates = sorted(set(daily_open.index) | set(daily_close.index))
-    ocs = []
-    for d in all_dates:
-        if pd.isna(d): continue
-        ocs.append({"data": str(d), "aberto": int(daily_open.get(d,0)), "fechado": int(daily_close.get(d,0))})
-    data['ocs_diarizado'] = sorted(ocs, key=lambda x: x['data'])
+    criticos = {"sjc": [], "litoral": []}
+    sub_crit = df_active[df_active['AGING'] > 24].sort_values('AGING', ascending=False)
+    for reg in ['SJC', 'LITORAL']:
+        rows = sub_crit[sub_crit['REGION'] == reg].head(50)
+        for _, r in rows.iterrows():
+            criticos[reg.lower()].append({
+                "id": r['ID'], "at": str(r['AT']), "aging": calc_aging_str(r['AGING'])
+            })
+    data['criticos'] = criticos
 
-    # 6. Backlog Aging (Específico do Filtro)
-    # Mostra a idade dos chamados DESTE PERÍODO que ainda estão abertos.
-    # Ex: Em D-1, mostra quantos chamados de ontem ainda estão abertos hoje e sua idade.
-    data['backlog_litoral'] = calculate_backlog_aging(df_lit, now_ref)
-    data['backlog_sjc'] = calculate_backlog_aging(df_sjc, now_ref)
+    # 4. SLA FECHAMENTO (Quem fechou no período)
+    mask_closed = (df['DT_CLOSE'] >= start_date) & (df['DT_CLOSE'] <= end_date)
+    df_closed = df[mask_closed].copy()
+    df_closed['SLA_VAL'] = (df_closed['DT_CLOSE'] - df_closed['DT_OPEN']).dt.total_seconds() / 3600
     
-    # 7. Repasse D-1 (Só faz sentido se o filtro for D-1 ou maior, mas calculamos sempre)
-    # Aqui vamos usar uma lógica genérica: Do que foi criado neste período, o que ainda está aberto?
-    data['backlog_d1_specific'] = {
-        "litoral": int(len(df_lit[df_lit['DASH_STATUS'] != 'ENCERRADA'])),
-        "sjc": int(len(df_sjc[df_sjc['DASH_STATUS'] != 'ENCERRADA']))
-    }
+    sla = {"sjc": {"in":0, "out":0}, "litoral": {"in":0, "out":0}}
+    for _, r in df_closed.iterrows():
+        reg = r['REGION'].lower()
+        if reg not in sla: continue
+        target = 4 if r['B2B'] > 0 else 8
+        if r['SLA_VAL'] <= target: sla[reg]['in'] += 1
+        else: sla[reg]['out'] += 1
+    data['sla'] = sla
+
+    # 5. VIPs (Ativos no momento)
+    mask_vip = (df_active['VIP'] > 0) | (df_active['HUNTER'] > 0) | (df_active['INFLUENCER'].notna() & (df_active['INFLUENCER'] != 0))
+    df_vip = df_active[mask_vip].copy()
+    vips = {"sjc": [], "litoral": []}
+    for reg in ['SJC', 'LITORAL']:
+        sub = df_vip[df_vip['REGION'] == reg].sort_values('AGING', ascending=False)
+        for _, r in sub.iterrows():
+            tag = "HUNTER" if r['HUNTER']>0 else "VIP"
+            vips[reg.lower()].append({
+                "id": r['ID'], "at": str(r['AT']), "tag": tag, "aging": calc_aging_str(r['AGING'])
+            })
+    data['vips'] = vips
 
     return data
 
-def calculate_simple_kpis(subset, now_ref):
-    if subset.empty: return {"oc_24h": 0, "aberto": 0, "encerrado": 0, "total": 0}
-    encerrado = len(subset[subset['DASH_STATUS'] == 'ENCERRADA'])
-    abertos = subset[subset['DASH_STATUS'] != 'ENCERRADA']
-    oc_24h = 0
-    if not abertos.empty:
-        duration = now_ref - abertos['DATA_OCORRENCIA']
-        oc_24h = (duration > pd.Timedelta(hours=24)).sum()
-    return {"oc_24h": int(oc_24h), "aberto": int(len(abertos)), "encerrado": int(encerrado), "total": int(len(subset))}
-
-def calculate_backlog_aging(df, now_ref):
-    # Calcula aging apenas para o subset passado (respeitando o filtro de data)
-    abertos = df[df['DASH_STATUS'] != 'ENCERRADA'].copy()
-    metrics = {"ate_24h": 0, "de_24_72h": 0, "mais_72h": 0, "total_backlog": 0}
-    if abertos.empty: return metrics
-    
-    abertos['IDADE_HORAS'] = (now_ref - abertos['DATA_OCORRENCIA']).dt.total_seconds() / 3600
-    metrics['ate_24h'] = int((abertos['IDADE_HORAS'] <= 24).sum())
-    metrics['de_24_72h'] = int(((abertos['IDADE_HORAS'] > 24) & (abertos['IDADE_HORAS'] <= 72)).sum())
-    metrics['mais_72h'] = int((abertos['IDADE_HORAS'] > 72).sum())
-    metrics['total_backlog'] = int(len(abertos))
-    return metrics
-
 def main():
-    print("--- PROCESSAMENTO WAR ROOM (FILTRO TOTAL) ---")
-    
+    print("--- GERANDO DADOS (MULTI-FORMATO) ---")
     df = load_data()
-    if df.empty: return
-
-    df = df[df['CONTRATADA'] == FILTRO_CONTRATADA]
-    print(f"Registros filtrados ({FILTRO_CONTRATADA}): {len(df)}")
-    if len(df) == 0: return
-
-    ref_date = df['DATA_OCORRENCIA'].max()
-    print(f"Data Referência: {ref_date}")
     
-    years = sorted(df['DATA_OCORRENCIA'].dt.year.unique())
-    print(f"Anos: {years}")
+    if df.empty:
+        print("ERRO: Nenhum dado carregado.")
+        return
 
-    # Tendências Anuais (Global - não muda com botões rápidos)
-    trends_by_year = {}
-    for year in years:
-        df_year = df[df['DATA_OCORRENCIA'].dt.year == year]
-        idx_mensal = df_year.groupby(df_year['DATA_OCORRENCIA'].dt.month).size()
-        mensal_list = [int(idx_mensal.get(m, 0)) for m in range(1, 13)]
-        
-        idx_afetacao = df_year.groupby(df_year['DATA_OCORRENCIA'].dt.month)['AFETACAO'].sum()
-        afetacao_list = [int(idx_afetacao.get(m, 0)) for m in range(1, 13)]
-        trends_by_year[str(year)] = {"mensal": mensal_list, "afetacao": afetacao_list}
+    # Filtro Contratada
+    df = df[df['CONTRACT'] == FILTRO_CONTRATADA]
+    print(f"Registros após filtro ({FILTRO_CONTRATADA}): {len(df)}")
+    
+    if len(df) == 0:
+        print("AVISO: Nenhum registro encontrado para este contrato. Verifique o nome 'ABILITY_SJ' no arquivo.")
+        return
 
-    # Views Rápidas (FILTRO RESTRITIVO)
-    # Cada view recebe APENAS os dados daquela data/periodo
-    df['DT_DATE'] = df['DATA_OCORRENCIA'].dt.date
-    ref_day = ref_date.date()
+    # Data de Referência (Hoje)
+    ref_now = df['DT_OPEN'].max()
+    # Se não tiver data de fechamento mais recente, usa a de abertura.
+    if 'DT_CLOSE' in df.columns:
+        last_close = df['DT_CLOSE'].max()
+        if pd.notna(last_close) and last_close > ref_now:
+            ref_now = last_close
+            
+    if pd.isna(ref_now): ref_now = datetime.datetime.now()
+    
+    print(f"Data Referência: {ref_now}")
+
+    # --- VIEWS TEMPORAIS ---
     views = {}
+    today_start = ref_now.replace(hour=0, minute=0, second=0, microsecond=0)
     
-    # D-0 (Apenas hoje)
-    views['d0'] = calculate_metrics(df[df['DT_DATE'] == ref_day], ref_date)
-    
-    # D-1 (Apenas ontem)
-    views['d1'] = calculate_metrics(df[df['DT_DATE'] == (ref_day - datetime.timedelta(days=1))], ref_date)
-    
-    # D-2 (Apenas anteontem)
-    views['d2'] = calculate_metrics(df[df['DT_DATE'] == (ref_day - datetime.timedelta(days=2))], ref_date)
-    
-    # Semana (Últimos 7 dias ou Semana corrente)
-    # Vamos usar Rolling 7 Days para ser útil
-    views['semana'] = calculate_metrics(df[df['DT_DATE'] >= (ref_day - datetime.timedelta(days=6))], ref_date)
-    
+    # D-0
+    views['d0'] = get_snapshot_metrics(df, today_start, ref_now)
+    # D-1
+    d1_start = today_start - datetime.timedelta(days=1)
+    d1_end = today_start - datetime.timedelta(seconds=1)
+    views['d1'] = get_snapshot_metrics(df, d1_start, d1_end)
+    # D-2
+    d2_start = today_start - datetime.timedelta(days=2)
+    d2_end = d1_start - datetime.timedelta(seconds=1)
+    views['d2'] = get_snapshot_metrics(df, d2_start, d2_end)
+    # Semana
+    week_start = today_start - datetime.timedelta(days=6)
+    views['semana'] = get_snapshot_metrics(df, week_start, ref_now)
     # Quinzena
-    views['quinzena'] = calculate_metrics(df[df['DT_DATE'] >= (ref_day - datetime.timedelta(days=14))], ref_date)
-    
-    # Mês Atual
-    views['mes_atual'] = calculate_metrics(
-        df[(df['DATA_OCORRENCIA'].dt.month == ref_date.month) & (df['DATA_OCORRENCIA'].dt.year == ref_date.year)], 
-        ref_date
-    )
+    quinz_start = today_start - datetime.timedelta(days=14)
+    views['quinzena'] = get_snapshot_metrics(df, quinz_start, ref_now)
 
-    # Histórico (Ano > Mês)
+    # Histórico
     history = {}
-    for year in years:
-        history[str(year)] = {}
-        for month in range(1, 13):
-            df_month = df[(df['DATA_OCORRENCIA'].dt.year == year) & (df['DATA_OCORRENCIA'].dt.month == month)]
-            history[str(year)][str(month)] = calculate_metrics(df_month, ref_date)
+    years = sorted(df['DT_OPEN'].dt.year.unique())
+    for y in years:
+        history[str(y)] = {}
+        for m in range(1,13):
+            try:
+                m_start = datetime.datetime(y, m, 1)
+                # Fim do mes
+                if m == 12: m_end = datetime.datetime(y+1, 1, 1) - datetime.timedelta(seconds=1)
+                else: m_end = datetime.datetime(y, m+1, 1) - datetime.timedelta(seconds=1)
+                
+                if m_start <= ref_now:
+                    end = m_end if m_end < ref_now else ref_now
+                    history[str(y)][str(m)] = get_snapshot_metrics(df, m_start, end)
+            except: pass
+
+    # Tendencias (Total Mensal)
+    trends = {}
+    for y in years:
+        df_y = df[df['DT_OPEN'].dt.year == y]
+        idx = df_y.groupby(df_y['DT_OPEN'].dt.month).size()
+        trends[str(y)] = [int(idx.get(m,0)) for m in range(1,13)]
 
     payload = {
-        "years_available": [str(y) for y in years],
-        "trends_by_year": trends_by_year,
+        "ref_date": ref_now.strftime('%d/%m/%Y %H:%M'),
+        "years": [str(y) for y in years],
+        "trends": trends,
         "views": views,
-        "history": history,
-        "ref_date": ref_date.strftime('%d/%m/%Y')
+        "history": history
     }
 
     with open(ARQUIVO_SAIDA, 'w', encoding='utf-8') as f:
         f.write(f"window.DADOS_PAINEL = {json.dumps(payload, indent=2)};")
-    
-    print("SUCESSO! Dados gerados com filtro restritivo.")
+    print("SUCESSO!")
 
 if __name__ == "__main__":
     main()

@@ -1,48 +1,110 @@
-
 {
-    "tendencia_mensal": [12, 16, 9, 21, 18, 24, 19, 23, 20, 26, 22, 28],
-    "tendencia_afetacao": [3, 5, 2, 4, 1, 6, 3, 2, 5, 4, 3, 7],
-    "status_litoral": {
-      "em_andamento": 1,
-      "nao_iniciada": 0,
-      "encerrada": 0
+  "tendencia_mensal": [
+    365
+  ],
+  "tendencia_afetacao": [
+    4971
+  ],
+  "status_litoral": {
+    "em_andamento": 1,
+    "nao_iniciada": 3,
+    "encerrada": 117
+  },
+  "status_sjc": {
+    "em_andamento": 1,
+    "nao_iniciada": 1,
+    "encerrada": 242
+  },
+  "oc_por_at_litoral": [
+    {
+      "at": "ENCERRADA",
+      "qtd": 117
     },
-    "status_sjc": {
-      "em_andamento": 7,
-      "nao_iniciada": 3,
-      "encerrada": 0
+    {
+      "at": "AGUARDANDO",
+      "qtd": 3
     },
-    "oc_por_at_litoral": [
-      { "at": "EM EXECUÇÃO", "qtd": 1 },
-      { "at": "AGUARDANDO", "qtd": 0 },
-      { "at": "ENCERRADA", "qtd": 0 }
-    ],
-    "oc_por_at_sjc": [
-      { "at": "EM EXECUÇÃO", "qtd": 8 },
-      { "at": "AGUARDANDO", "qtd": 2 },
-      { "at": "ENCERRADA", "qtd": 1 }
-    ],
-    "kpis_litoral": {
-      "oc_24h": 0,
-      "aberto": 1,
-      "encerrado": 0,
-      "total": 1
+    {
+      "at": "EM EXECU\u00c7\u00c3O",
+      "qtd": 1
+    }
+  ],
+  "oc_por_at_sjc": [
+    {
+      "at": "ENCERRADA",
+      "qtd": 242
     },
-    "kpis_sjc": {
-      "oc_24h": 0,
-      "aberto": 10,
-      "encerrado": 1,
-      "total": 11
+    {
+      "at": "AGUARDANDO",
+      "qtd": 1
     },
-    "ocs_diarizado": [
-      { "data": "2026-01-01", "aberto": 22, "fechado": 0 },
-      { "data": "2026-01-02", "aberto": 62, "fechado": 0 },
-      { "data": "2026-01-03", "aberto": 21, "fechado": 0 },
-      { "data": "2026-01-04", "aberto": 36, "fechado": 0 },
-      { "data": "2026-01-05", "aberto": 44, "fechado": 0 },
-      { "data": "2026-01-06", "aberto": 37, "fechado": 0 },
-      { "data": "2026-01-07", "aberto": 41, "fechado": 0 },
-      { "data": "2026-01-08", "aberto": 10, "fechado": 0 }
-    ]
-  }
-  
+    {
+      "at": "EM EXECU\u00c7\u00c3O",
+      "qtd": 1
+    }
+  ],
+  "kpis_litoral": {
+    "oc_24h": 1,
+    "aberto": 4,
+    "encerrado": 117,
+    "total": 121
+  },
+  "kpis_sjc": {
+    "oc_24h": 1,
+    "aberto": 2,
+    "encerrado": 242,
+    "total": 244
+  },
+  "ocs_diarizado": [
+    {
+      "data": "2026-01-01",
+      "aberto": 22,
+      "fechado": 10
+    },
+    {
+      "data": "2026-01-02",
+      "aberto": 63,
+      "fechado": 63
+    },
+    {
+      "data": "2026-01-03",
+      "aberto": 37,
+      "fechado": 39
+    },
+    {
+      "data": "2026-01-04",
+      "aberto": 21,
+      "fechado": 26
+    },
+    {
+      "data": "2026-01-05",
+      "aberto": 45,
+      "fechado": 37
+    },
+    {
+      "data": "2026-01-06",
+      "aberto": 38,
+      "fechado": 40
+    },
+    {
+      "data": "2026-01-07",
+      "aberto": 41,
+      "fechado": 47
+    },
+    {
+      "data": "2026-01-08",
+      "aberto": 54,
+      "fechado": 54
+    },
+    {
+      "data": "2026-01-09",
+      "aberto": 41,
+      "fechado": 41
+    },
+    {
+      "data": "2026-01-10",
+      "aberto": 3,
+      "fechado": 4
+    }
+  ]
+}

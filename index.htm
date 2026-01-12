@@ -1,134 +1,95 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WAR ROOM</title>
-
-  <!-- CSS -->
+  <title>WAR ROOM - ABILITY_SJ</title>
   <link rel="stylesheet" href="css/style.css" />
-
-  <!-- Chart.js (gráficos) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <!-- html2canvas (screenshot) -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <!-- jsPDF (PDF) -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
   <header class="header">
-    <h1>WAR ROOM </h1>
-    <div class="header-actions">
-      <button id="refreshBtn">Atualizar agora</button>
-      <button id="exportPngBtn">Exportar PNG</button>
-      <button id="exportPdfBtn">Exportar PDF</button>
-      <button id="sendBtn">Enviar por e-mail</button>
+    <div class="header-top">
+      <h1>WAR ROOM <span class="brand-tag">ABILITY_SJ</span></h1>
+      <small id="lastUpdate">Carregando...</small>
     </div>
-    <small id="lastUpdate">Última atualização: —</small>
+    <div class="filter-bar">
+      <div class="filter-group-labeled">
+        <label>HISTÓRICO:</label>
+        <select id="yearSelect" class="styled-select"></select>
+        <select id="monthSelect" class="styled-select">
+          <option value="0">Resumo Anual</option>
+          <option value="1">Janeiro</option>
+          <option value="2">Fevereiro</option>
+          <option value="3">Março</option>
+          <option value="4">Abril</option>
+          <option value="5">Maio</option>
+          <option value="6">Junho</option>
+          <option value="7">Julho</option>
+          <option value="8">Agosto</option>
+          <option value="9">Setembro</option>
+          <option value="10">Outubro</option>
+          <option value="11">Novembro</option>
+          <option value="12">Dezembro</option>
+        </select>
+        <button id="btnLoadHistory" class="action-btn">IR</button>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <button class="filter-btn active" data-view="d0">D-0 (Hoje)</button>
+        <button class="filter-btn" data-view="d1">D-1</button>
+        <button class="filter-btn" data-view="d2">D-2</button>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <button class="filter-btn" data-view="semana">Semana</button>
+        <button class="filter-btn" data-view="quinzena">Quinzena</button>
+      </div>
+      <div class="header-actions">
+        <button id="refreshBtn">↻</button>
+        <button id="exportPngBtn">PNG</button>
+      </div>
+    </div>
   </header>
 
   <main id="dashboard">
     <section class="grid">
-      <!-- Tendência Mensal -->
-      <div class="card">
-        <h3>Tendência Mensal</h3>
-        <canvas id="tendenciaMensal"></canvas>
-      </div>
+      <div class="card"><div class="card-header"><h3>Tendência Mensal (Ano)</h3><span id="valTendenciaMensal" class="card-value">0</span></div><div class="chart-container"><canvas id="tendenciaMensal"></canvas></div></div>
+      <div class="card"><div class="card-header"><h3>Tendência Afetação (Ano)</h3><span id="valTendenciaAfetacao" class="card-value">0</span></div><div class="chart-container"><canvas id="tendenciaAfetacao"></canvas></div></div>
+      
+      <div class="card"><div class="card-header"><h3>Status Litoral</h3><span id="valStatusLitoral" class="card-value">0</span></div><div class="chart-container"><canvas id="statusLitoral"></canvas></div><div class="legend"><span class="pill pill-blue">AND</span><span class="pill pill-gray">N/INI</span><span class="pill pill-green">FIM</span></div></div>
+      <div class="card"><div class="card-header"><h3>Status SJC</h3><span id="valStatusSJC" class="card-value">0</span></div><div class="chart-container"><canvas id="statusSJC"></canvas></div><div class="legend"><span class="pill pill-blue">AND</span><span class="pill pill-gray">N/INI</span><span class="pill pill-green">FIM</span></div></div>
 
-      <!-- Tendência Afetação -->
-      <div class="card">
-        <h3>Tendência Afetação</h3>
-        <canvas id="tendenciaAfetacao"></canvas>
-      </div>
-
-      <!-- Status Litoral D‑0 (Donut) -->
-      <div class="card">
-        <h3>Status Litoral D‑0</h3>
-        <canvas id="statusLitoral"></canvas>
-        <div class="legend">
-          <span class="pill pill-blue">EM ANDAMENTO</span>
-          <span class="pill pill-gray">NÃO INICIADA</span>
-          <span class="pill pill-green">ENCERRADA</span>
+      <div class="card card-wide" style="background:#eef2ff; border:1px solid #c7d2fe;">
+        <div class="card-header"><h3 style="color:#3730a3">⚠️ Pendências do Período (Abertos e Não Fechados)</h3></div>
+        <div style="display:flex; justify-content:space-around; align-items:center; padding:10px;">
+          <div style="text-align:center;"><div style="font-size:12px;">LITORAL</div><div id="valBacklogD1Lit" style="font-size:32px; font-weight:800; color:#ef4444;">0</div></div>
+          <div style="width:1px; height:40px; background:#cbd5e1;"></div>
+          <div style="text-align:center;"><div style="font-size:12px;">SJC</div><div id="valBacklogD1SJC" style="font-size:32px; font-weight:800; color:#ef4444;">0</div></div>
         </div>
       </div>
 
-      <!-- Status SJC D‑0 (Donut) -->
-      <div class="card">
-        <h3>Status SJC D‑0</h3>
-        <canvas id="statusSJC"></canvas>
-        <div class="legend">
-          <span class="pill pill-blue">EM ANDAMENTO</span>
-          <span class="pill pill-gray">NÃO INICIADA</span>
-          <span class="pill pill-green">ENCERRADA</span>
-        </div>
-      </div>
+      <div class="card"><div class="card-header"><h3>Aging dos Pendentes (Lit)</h3></div><div class="chart-container"><canvas id="chartBacklogLit"></canvas></div><div class="legend"><span class="pill" style="background:#22c55e"><24h</span><span class="pill" style="background:#f59e0b">24-72h</span><span class="pill" style="background:#ef4444">>72h</span></div></div>
+      <div class="card"><div class="card-header"><h3>aging dos Pendentes (SJC)</h3></div><div class="chart-container"><canvas id="chartBacklogSJC"></canvas></div><div class="legend"><span class="pill" style="background:#22c55e"><24h</span><span class="pill" style="background:#f59e0b">24-72h</span><span class="pill" style="background:#ef4444">>72h</span></div></div>
 
-      <!-- maior  que 24 hrs -->
-      <div class="card card-half">
-        <h3>OCs acima de 24 hrs</h3>
-        <canvas id="ocPorAtLitoral"></canvas>
-      </div>
+      <div class="card card-half"><div class="card-header"><h3>Produção do Período</h3><span id="valEficiencia" class="card-value">0%</span></div><div class="chart-container"><canvas id="chartFluxo"></canvas></div></div>
+      <div class="card card-half"><div class="card-header"><h3>Detalhe por Área (SJC)</h3></div><div class="chart-container"><canvas id="ocPorAtSJC"></canvas></div></div>
 
-      <!-- OCs por AT  -->
-      <div class="card card-half">
-        <h3>OCs por AT </h3>
-        <canvas id="ocPorAtSJC"></canvas>
-      </div>
+      <div class="kpi kpi-purple"><h4>Encerrado Litoral</h4><div id="encerradoLitoral" class="kpi-value">0</div></div>
+      <div class="kpi kpi-purple"><h4>Total OCs Litoral</h4><div id="totalOcLitoral" class="kpi-value">0</div></div>
+      <div class="kpi kpi-purple"><h4>Pend. > 24h Litoral</h4><div id="oc24hLitoral" class="kpi-value">0</div></div>
+      <div class="kpi kpi-purple"><h4>OC Aberto Litoral</h4><div id="ocAbertoLitoral" class="kpi-value">0</div></div>
+      <div class="kpi kpi-purple"><h4>Encerrado SJC</h4><div id="encerradoSJC" class="kpi-value">0</div></div>
+      <div class="kpi kpi-purple"><h4>Total OCs SJC</h4><div id="totalOcSJC" class="kpi-value">0</div></div>
+      <div class="kpi kpi-purple"><h4>Pend. > 24h SJC</h4><div id="oc24hSJC" class="kpi-value">0</div></div>
+      <div class="kpi kpi-purple"><h4>OC Aberto SJC</h4><div id="ocAbertoSJC" class="kpi-value">0</div></div>
 
-      <!-- KPIs LITORAL: 4 blocos roxos na MESMA linha (ocupa 12 colunas) -->
-      <div class="kpi kpi-purple">
-        <h4>Encerrado Litoral</h4>
-        <div id="encerradoLitoral" class="kpi-value">0</div>
-      </div>
-      <div class="kpi kpi-purple">
-        <h4>Total OCs Litoral</h4>
-        <div id="totalOcLitoral" class="kpi-value">0</div>
-      </div>
-      <div class="kpi kpi-purple">
-        <h4>OCs &gt; 24h Litoral</h4>
-        <div id="oc24hLitoral" class="kpi-value">0</div>
-      </div>
-      <div class="kpi kpi-purple">
-        <h4>OC Aberto Litoral</h4>
-        <div id="ocAbertoLitoral" class="kpi-value">0</div>
-      </div>
-
-      <!-- KPIs SJC: 4 blocos roxos na linha seguinte (também 12 colunas) -->
-      <div class="kpi kpi-purple">
-        <h4>Encerrado SJC</h4>
-        <div id="encerradoSJC" class="kpi-value">0</div>
-      </div>
-      <div class="kpi kpi-purple">
-        <h4>Total OCs SJC</h4>
-        <div id="totalOcSJC" class="kpi-value">0</div>
-      </div>
-      <div class="kpi kpi-purple">
-        <h4>OCs &gt; 24h SJC</h4>
-        <div id="oc24hSJC" class="kpi-value">0</div>
-      </div>
-      <div class="kpi kpi-purple">
-        <h4>OC Aberto SJC</h4>
-        <div id="ocAbertoSJC" class="kpi-value">0</div>
-      </div>
-
-      <!-- Série temporal -->
-      <div class="card card-wide">
-        <h3>OCs Diarizado</h3>
-        <canvas id="ocsDiarizado"></canvas>
-        <div class="legend">
-          <span class="pill pill-orange">ABERTO</span>
-          <span class="pill pill-teal">FECHADO</span>
-        </div>
-      </div>
+      <div class="card card-wide"><div class="card-header"><h3>Evolução Diária do Período</h3></div><div class="chart-container-wide"><canvas id="ocsDiarizado"></canvas></div></div>
     </section>
   </main>
-
-  <footer class="footer">
-    <small>© Operação</small>
-  </footer>
-
-  <!-- JS do app (inalterado) -->
-  <script src="app.js"></script>
+  <script src="dados.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

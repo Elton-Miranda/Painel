@@ -1,148 +1,194 @@
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --primary: #660099; /* Roxo Vivo */
+  --primary-light: #f3e8ff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --blue: #2563eb;
+  --orange: #f59e0b;
+  --teal: #14b8a6;
+  --green: #16a34a;
+  --red: #ef4444;
+}
 
-:root{
-    --bg:#f2f4f8;
-    --card:#ffffff;
-    --primary:#660099;
-    --dark:#0b314d;
-    --blue:#7516e2;
-    --orange:#f59e0b;
-    --teal:#14b8a6;
-    --gray:#6b7280;
-    --green:#22c55e;
-    --purple:#660099; /* roxo dos KPIs */
-  }
-  
-  *{ box-sizing:border-box; }
-  body{
-    margin:0;
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',sans-serif;
-    background:var(--bg);
-    color:#0a0099;
-  }
-  
-  /* Header */
-  .header{
-    background:linear-gradient(180deg,#e8eef6,#dbe6f3);
-    padding:16px 20px;
-    border-bottom:2px solid #cbd5e1;
-  }
-  .header h1{
-    margin:0 0 8px;
-    text-transform:uppercase;
-    letter-spacing:1px;
-    color:var(--blue);
-  }
-  .header-actions{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    margin:8px 0;
-  }
-  .header-actions button{
-    background:var(--primary);
-    color:#fff;
-    border:none;
-    padding:8px 12px;
-    border-radius:6px;
-    cursor:pointer;
-  }
-  .header-actions button:hover{ opacity:.9; }
-  #lastUpdate{ color:#475569; }
-  
-  /* Main */
-  main{ padding:16px 20px; }
-  
-  /* Grade principal: 12 colunas, padrão inicial */
-  .grid{
-    display:grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap:12px;
-  }
-  
-  /* Cards padrão (blocos finos) */
-  .card{
-    background:var(--card);
-    border-radius:8px;
-    padding:12px;
-    box-shadow:0 1px 3px rgba(0,0,0,.08);
-    grid-column: span 3; /* padrão: 3 colunas por card fino */
-  }
-  .card h3{
-    margin-top:0;
-    color:var(--dark);
-    font-weight:600;
-  }
-  
-  /* Dois cards meia largura (OCs por AT) */
-  .card-half{ grid-column: span 6; }
-  
-  /* Card largo (série temporal) */
-  .card-wide{ grid-column: span 12; }
-  
-  /* Legend pills */
-  .legend{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
-  .pill{
-    display:inline-block;
-    padding:4px 8px;
-    border-radius:999px;
-    font-size:12px;
-    color:#fff;
-  }
-  .pill-blue{ background:#2563eb; }
-  .pill-gray{ background:#64748b; }
-  .pill-green{ background:#16a34a; }
-  .pill-orange{ background:var(--orange); }
-  .pill-teal{ background:var(--teal); }
-  
-  /* ===========================
-     KPIs (ajustes pedidos)
-     =========================== */
-  
-  /* Cada KPI ocupa 3 colunas -> 4 por linha = largura total da página */
-  .kpi{
-    grid-column: span 3;
-    background: var(--purple);
-    color:#fff;
-    border-radius:8px;
-    padding:12px;
-    text-align:center;
-  
-    /* Altura fina (~2 cm ≈ 75.6px) */
-    min-height: 75.6px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-  
-    box-shadow:0 1px 3px rgba(0,0,0,.1);
-  }
-  
-  /* Tipografia dos KPIs */
-  .kpi h4{
-    margin:0 0 6px;
-    font-weight:500;
-    font-size:14px;
-  }
-  .kpi-value{
-    font-size:32px;
-    font-weight:700;
-    line-height:1;
-  }
-  
-  /* Footer */
-  .footer{
-    padding:12px 20px;
-    text-align:center;
-    color:#475569;
-  }
-  
-  /* Responsivo (mantém padrão original) */
-  @media (max-width: 1024px){
-    .card{ grid-column: span 6; } /* cards finos viram meio de linha */
-    .card-half{ grid-column: span 12; } /* os "meia largura" ocupam linha inteira */
-    .kpi{ grid-column: span 6; }  /* KPIs: 2 por linha em tablet */
-  }
-  @media (max-width: 640px){
-    .card, .card-half, .card-wide{ grid-column: span 12; } /* uma coluna no mobile */
-    .kpi{ grid-column: span 12; }  /* KPIs: 1 por linha no mobile */
-  }
-  
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text-main);
+  padding-bottom: 20px;
+}
+
+/* Header Compacto */
+.header {
+  background: #fff;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-tag {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  font-weight: 700;
+}
+
+/* Barra de Filtros */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 6px;
+  gap: 2px;
+}
+
+.filter-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover { background: #fff; color: var(--primary); }
+.filter-btn.active { background: #fff; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+.filter-divider { width: 1px; height: 24px; background: #e2e8f0; }
+
+.header-actions { margin-left: auto; display: flex; gap: 8px; }
+.header-actions button {
+  background: var(--text-main);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+.header-actions button:hover { opacity: 0.9; }
+
+/* Grid Layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+  padding: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  grid-column: span 3; /* Padrão: 3 colunas (4 cards por linha) */
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.card-header h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Número em Destaque */
+.card-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 2px 10px;
+  border-radius: 99px;
+}
+.card-value.warning { background: #fff7ed; color: var(--orange); }
+
+/* Chart Containers para Responsividade */
+.chart-container { position: relative; height: 160px; width: 100%; }
+.chart-container-h { position: relative; height: 200px; width: 100%; }
+.chart-container-wide { position: relative; height: 250px; width: 100%; }
+
+.card-half { grid-column: span 6; }
+.card-wide { grid-column: span 12; }
+
+/* Legendas */
+.legend { display: flex; justify-content: center; gap: 8px; margin-top: auto; padding-top: 10px; }
+.pill { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; color: #fff; }
+.pill-blue { background: var(--blue); }
+.pill-gray { background: var(--text-muted); }
+.pill-green { background: var(--green); }
+.pill-orange { background: var(--orange); }
+.pill-teal { background: var(--teal); }
+
+/* KPIs Roxos */
+.kpi {
+  grid-column: span 3;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(102, 0, 153, 0.2);
+}
+.kpi h4 { margin: 0 0 4px; font-weight: 500; font-size: 13px; opacity: 0.9; }
+.kpi-value { font-size: 36px; font-weight: 800; line-height: 1; }
+.text-warning { color: #fcd34d; } /* Amarelo para alertas dentro do roxo */
+
+.footer { text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px; }
+
+/* Responsividade */
+@media (max-width: 1200px) {
+  .card { grid-column: span 6; } /* 2 por linha */
+  .kpi { grid-column: span 6; }
+}
+@media (max-width: 768px) {
+  .card, .card-half, .kpi { grid-column: span 12; } /* 1 por linha */
+  .header-top { flex-direction: column; align-items: flex-start; }
+  .filter-bar { overflow-x: auto; padding-bottom: 8px; }
+}

@@ -1,276 +1,127 @@
+/* js/app.js */
+const STATE = { charts: {}, currentYear: null };
 
-/* app.js — lógica de renderização e atualização */
+document.addEventListener('DOMContentLoaded', () => {
+    if(window.DADOS_PAINEL) init(window.DADOS_PAINEL);
+    else alert("Dados ausentes.");
+});
 
-const STATE = {
-    charts: {}
-  };
-  
-  // Altere este caminho para sua origem real (API/SharePoint/Excel via serviço)
-  const DATA_URL = './data.json';
-  
-  // Atualização automática a cada 5 minutos
-  const AUTO_REFRESH_MS = 5 * 60 * 1000;
-  
-  document.addEventListener('DOMContentLoaded', () => {
-    // Botões
-    document.getElementById('refreshBtn').addEventListener('click', loadAndRender);
-    document.getElementById('exportPngBtn').addEventListener('click', exportPNG);
-    document.getElementById('exportPdfBtn').addEventListener('click', exportPDF);
-    document.getElementById('sendBtn').addEventListener('click', sendPanel);
-  
-    // Primeira carga
-    loadAndRender();
-  
-    // Auto-refresh
-    setInterval(loadAndRender, AUTO_REFRESH_MS);
-  });
-  
-  async function loadAndRender(){
-    try{
-      const res = await fetch(DATA_URL, { cache: 'no-store' });
-      const data = await res.json();
-      renderDashboard(data);
-      setLastUpdate();
-    }catch(err){
-      console.error('Falha ao carregar dados:', err);
-      alert('Falha ao carregar dados. Verifique a origem.');
+function init(data){
+    setupButtons(data);
+    const selYear = document.getElementById('yearSelect');
+    if(data.years_available && data.years_available.length > 0){
+        data.years_available.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = y; opt.textContent = y;
+            selYear.appendChild(opt);
+        });
+        STATE.currentYear = data.years_available[data.years_available.length - 1];
+        selYear.value = STATE.currentYear;
     }
-  }
-  
-  function setLastUpdate(){
-    const el = document.getElementById('lastUpdate');
-    const now = new Date();
-    const fmt = now.toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' });
-    el.textContent = `Última atualização: ${fmt}`;
-  }
-  
-  function renderDashboard(data){
-    // Tendência Mensal (barra)
-    renderBar('tendenciaMensal', {
-      labels: Array.from({length:data.tendencia_mensal.length}, (_,i)=>`M${i+1}`),
-      datasets: [{ label:'Índice', data:data.tendencia_mensal, backgroundColor:'#2563eb' }]
+    loadViewData('d0');
+}
+
+function setupButtons(data){
+    const quickBtns = document.querySelectorAll('.filter-btn');
+    quickBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            quickBtns.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            document.getElementById('monthSelect').value = "0";
+            loadViewData(e.target.getAttribute('data-view'));
+        });
     });
-  
-    // Tendência Afetação (barra)
-    renderBar('tendenciaAfetacao', {
-      labels: Array.from({length:data.tendencia_afetacao.length}, (_,i)=>`M${i+1}`),
-      datasets: [{ label:'Afetação', data:data.tendencia_afetacao, backgroundColor:'#f59e0b' }]
-    });
-  
-    // Status Litoral (donut)
-    renderDoughnut('statusLitoral', {
-      labels:['EM ANDAMENTO','NÃO INICIADA','ENCERRADA'],
-      datasets:[{
-        data:[
-          data.status_litoral.em_andamento,
-          data.status_litoral.nao_iniciada,
-          data.status_litoral.encerrada
-        ],
-        backgroundColor:['#2563eb','#64748b','#16a34a']
-      }]
-    });
-  
-    // Status SJC (donut)
-    renderDoughnut('statusSJC', {
-      labels:['EM ANDAMENTO','NÃO INICIADA','ENCERRADA'],
-      datasets:[{
-        data:[
-          data.status_sjc.em_andamento,
-          data.status_sjc.nao_iniciada,
-          data.status_sjc.encerrada
-        ],
-        backgroundColor:['#2563eb','#64748b','#16a34a']
-      }]
-    });
-  
-    // OCs por AT - Litoral (barra horizontal)
-    renderHorizontalBar('ocPorAtLitoral', {
-      labels:data.oc_por_at_litoral.map(x=>x.at),
-      datasets:[{ label:'Quantidade', data:data.oc_por_at_litoral.map(x=>x.qtd), backgroundColor:'#0ea5e9' }]
-    });
-  
-    // OCs por AT - SJC (barra horizontal)
-    renderHorizontalBar('ocPorAtSJC', {
-      labels:data.oc_por_at_sjc.map(x=>x.at),
-      datasets:[{ label:'Quantidade', data:data.oc_por_at_sjc.map(x=>x.qtd), backgroundColor:'#10b981' }]
-    });
-  
-    // KPIs
-    setText('oc24hLitoral', data.kpis_litoral.oc_24h);
-    setText('ocAbertoLitoral', data.kpis_litoral.aberto);
-    setText('encerradoLitoral', data.kpis_litoral.encerrado);
-    setText('totalOcLitoral', data.kpis_litoral.total);
-  
-    setText('oc24hSJC', data.kpis_sjc.oc_24h);
-    setText('ocAbertoSJC', data.kpis_sjc.aberto);
-    setText('encerradoSJC', data.kpis_sjc.encerrado);
-    setText('totalOcSJC', data.kpis_sjc.total);
-  
-    // Série temporal OCs diarizado (linhas)
-    renderLine('ocsDiarizado', {
-      labels: data.ocs_diarizado.map(x=>formatDate(x.data)),
-      datasets: [
-        {
-          label: 'ABERTO',
-          data: data.ocs_diarizado.map(x=>x.aberto),
-          borderColor: '#f59e0b',
-          backgroundColor: 'rgba(245,158,11,.15)',
-          tension: .3
-        },
-        {
-          label: 'FECHADO',
-          data: data.ocs_diarizado.map(x=>x.fechado),
-          borderColor: '#14b8a6',
-          backgroundColor: 'rgba(20,184,166,.15)',
-          tension: .3
+
+    document.getElementById('btnLoadHistory').addEventListener('click', () => {
+        quickBtns.forEach(b => b.classList.remove('active'));
+        const y = document.getElementById('yearSelect').value;
+        const m = document.getElementById('monthSelect').value;
+        
+        if(m === "0") {
+            loadViewData('mes_atual');
+            alert("Exibindo mês atual. Selecione um mês para histórico.");
+        } else {
+            loadHistoryData(y, m);
         }
-      ]
+        STATE.currentYear = y;
+        renderGlobalTrends(data, y);
     });
-  }
-  
-  /* Helpers de renderização Chart.js */
-  function renderBar(canvasId, cfg){
-    destroyIfExists(canvasId);
-    const ctx = document.getElementById(canvasId);
-    STATE.charts[canvasId] = new Chart(ctx, {
-      type:'bar',
-      data:cfg,
-      options:{
-        responsive:true,
-        plugins:{ legend:{ display:false } },
-        scales:{ y:{ beginAtZero:true } }
-      }
+
+    document.getElementById('yearSelect').addEventListener('change', (e) => {
+        STATE.currentYear = e.target.value;
+        renderGlobalTrends(data, STATE.currentYear);
     });
-  }
-  function renderHorizontalBar(canvasId, cfg){
-    destroyIfExists(canvasId);
-    const ctx = document.getElementById(canvasId);
-    STATE.charts[canvasId] = new Chart(ctx, {
-      type:'bar',
-      data:cfg,
-      options:{
-        indexAxis:'y',
-        responsive:true,
-        plugins:{ legend:{ display:false } },
-        scales:{ x:{ beginAtZero:true } }
-      }
-    });
-  }
-  function renderDoughnut(canvasId, cfg){
-    destroyIfExists(canvasId);
-    const ctx = document.getElementById(canvasId);
-    STATE.charts[canvasId] = new Chart(ctx, {
-      type:'doughnut',
-      data:cfg,
-      options:{
-        responsive:true,
-        plugins:{
-          legend:{ position:'bottom' }
-        },
-        cutout:'60%'
-      }
-    });
-  }
-  function renderLine(canvasId, cfg){
-    destroyIfExists(canvasId);
-    const ctx = document.getElementById(canvasId);
-    STATE.charts[canvasId] = new Chart(ctx, {
-      type:'line',
-      data:cfg,
-      options:{
-        responsive:true,
-        plugins:{ legend:{ position:'bottom' } }
-      }
-    });
-  }
-  function destroyIfExists(id){
-    const chart = STATE.charts[id];
-    if(chart){ chart.destroy(); }
-  }
-  function setText(id, value){
-    const el = document.getElementById(id);
-    el.textContent = value ?? '—';
-  }
-  function formatDate(iso){
-    const d = new Date(iso);
-    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
-  }
-  
-  /* Exportações */
-  async function exportPNG(){
-    const dash = document.getElementById('dashboard');
-    const canvas = await html2canvas(dash, { scale:2 });
-    const dataURL = canvas.toDataURL('image/png');
-    downloadDataURL(dataURL, `war-room-${dateSlug()}.png`);
-  }
-  async function exportPDF(){
-    const dash = document.getElementById('dashboard');
-    const canvas = await html2canvas(dash, { scale:2 });
-    const dataURL = canvas.toDataURL('image/png');
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    // Ajusta imagem à página
-    const imgProps = pdf.getImageProperties(dataURL);
-    const ratio = Math.min(pageW/imgProps.width, pageH/imgProps.height);
-    const w = imgProps.width * ratio;
-    const h = imgProps.height * ratio;
-    const x = (pageW - w)/2;
-    const y = (pageH - h)/2;
-    pdf.addImage(dataURL, 'PNG', x, y, w, h);
-    pdf.save(`war-room-${dateSlug()}.pdf`);
-  }
-  function downloadDataURL(dataURL, filename){
-    const a = document.createElement('a');
-    a.href = dataURL;
-    a.download = filename;
-    a.click();
-  }
-  function dateSlug(){
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    const dd = String(d.getDate()).padStart(2,'0');
-    return `${yyyy}${mm}${dd}`;
-  }
-  
-  /* Envio automático (via webhook do Power Automate) */
-  async function sendPanel(){
-    try{
-      // 1) captura imagem do dashboard
-      const dash = document.getElementById('dashboard');
-      const canvas = await html2canvas(dash, { scale:2 });
-      const pngBase64 = canvas.toDataURL('image/png'); // data:image/png;base64,...
-  
-      // 2) configura a chamada ao fluxo Power Automate com trigger HTTP
-      // SUBSTITUA pela URL do seu fluxo (RequestBin/Power Automate)
-      const flowUrl = 'https://prod-XX.azurewebsites.net/api/.../seuFluxo'; // exemplo
-  
-      // payload: imagem + metadados + lista de e-mails
-      const payload = {
-        title: 'WAR ROOM',
-        date: new Date().toISOString(),
-        imageBase64: pngBase64,
-        recipients: [
-          "pessoa1@empresa.com",
-          "pessoa2@empresa.com"
-        ]
-      };
-  
-      const res = await fetch(flowUrl, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify(payload)
-      });
-  
-      if(!res.ok){
-        throw new Error(`Falha no envio: ${res.status}`);
-      }
-      alert('Painel enviado com sucesso!');
-    }catch(err){
-      console.error(err);
-      alert('Não foi possível enviar o painel. Verifique a URL do fluxo e a rede.');
-    }
-  }
-  
+    
+    document.getElementById('refreshBtn').addEventListener('click', () => window.location.reload());
+    document.getElementById('exportPngBtn')?.addEventListener('click', exportPNG);
+}
+
+function loadViewData(view){
+    const data = window.DADOS_PAINEL;
+    if(!data.views[view]) return;
+    updateLabel(`Visão: ${view.toUpperCase()} | Ref: ${data.ref_date}`);
+    renderDash(data.views[view]);
+    renderGlobalTrends(data, STATE.currentYear);
+}
+
+function loadHistoryData(y, m){
+    const data = window.DADOS_PAINEL;
+    if(data.history[y] && data.history[y][m]){
+        updateLabel(`Histórico: ${m}/${y}`);
+        renderDash(data.history[y][m]);
+    } else alert("Sem dados.");
+}
+
+function renderGlobalTrends(allData, year){
+    const yd = allData.trends_by_year[year];
+    if(!yd) return;
+    const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    
+    renderChart('tendenciaMensal', 'line', { labels:months, datasets:[{ data:yd.mensal, borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.1)', fill:true, tension:0.4 }] });
+    setText('valTendenciaMensal', yd.mensal.reduce((a,b)=>a+b,0));
+    
+    renderChart('tendenciaAfetacao', 'line', { labels:months, datasets:[{ data:yd.afetacao, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.1)', fill:true, tension:0.4 }] });
+    setText('valTendenciaAfetacao', yd.afetacao.reduce((a,b)=>a+b,0));
+}
+
+function renderDash(d){
+    const donutC = ['#2563eb','#64748b','#16a34a'];
+    const agC = ['#22c55e', '#f59e0b', '#ef4444'];
+    
+    renderChart('statusLitoral', 'doughnut', { labels:['AND','N/INI','FIM'], datasets:[{ data:[d.status_litoral.em_andamento, d.status_litoral.nao_iniciada, d.status_litoral.encerrada], backgroundColor:donutC }] });
+    setText('valStatusLitoral', d.status_litoral.em_andamento + d.status_litoral.nao_iniciada + d.status_litoral.encerrada);
+    
+    renderChart('statusSJC', 'doughnut', { labels:['AND','N/INI','FIM'], datasets:[{ data:[d.status_sjc.em_andamento, d.status_sjc.nao_iniciada, d.status_sjc.encerrada], backgroundColor:donutC }] });
+    setText('valStatusSJC', d.status_sjc.em_andamento + d.status_sjc.nao_iniciada + d.status_sjc.encerrada);
+
+    setText('valBacklogD1Lit', d.backlog_d1_specific?.litoral || 0);
+    setText('valBacklogD1SJC', d.backlog_d1_specific?.sjc || 0);
+
+    renderChart('chartBacklogLit', 'doughnut', { labels:['<24h','24-72h','>72h'], datasets:[{ data:[d.backlog_litoral.ate_24h, d.backlog_litoral.de_24_72h, d.backlog_litoral.mais_72h], backgroundColor:agC }] });
+    renderChart('chartBacklogSJC', 'doughnut', { labels:['<24h','24-72h','>72h'], datasets:[{ data:[d.backlog_sjc.ate_24h, d.backlog_sjc.de_24_72h, d.backlog_sjc.mais_72h], backgroundColor:agC }] });
+
+    renderChart('chartFluxo', 'bar', { labels:['Vol'], datasets:[{ label:'Entrada', data:[d.fluxo.entrada], backgroundColor:'#6366f1'}, { label:'Saída', data:[d.fluxo.saida], backgroundColor:'#10b981'}] });
+    const ef = d.fluxo.entrada>0 ? Math.round((d.fluxo.saida/d.fluxo.entrada)*100) : (d.fluxo.saida>0?100:0);
+    setText('valEficiencia', `${ef}%`);
+
+    renderChart('ocPorAtSJC', 'bar', { labels:d.oc_por_at_sjc.map(x=>x.at), datasets:[{ data:d.oc_por_at_sjc.map(x=>x.qtd), backgroundColor:'#10b981', borderRadius:4 }], indexAxis:'y' });
+
+    setText('encerradoLitoral', d.kpis_litoral.encerrado); setText('totalOcLitoral', d.kpis_litoral.total);
+    setText('oc24hLitoral', d.kpis_litoral.oc_24h); setText('ocAbertoLitoral', d.kpis_litoral.aberto);
+    setText('encerradoSJC', d.kpis_sjc.encerrado); setText('totalOcSJC', d.kpis_sjc.total);
+    setText('oc24hSJC', d.kpis_sjc.oc_24h); setText('ocAbertoSJC', d.kpis_sjc.aberto);
+
+    renderChart('ocsDiarizado', 'line', { labels:d.ocs_diarizado.map(x=>x.data.slice(5).split('-').reverse().join('/')), datasets:[{ label:'ABERTO', data:d.ocs_diarizado.map(x=>x.aberto), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.1)', fill:true }, { label:'FECHADO', data:d.ocs_diarizado.map(x=>x.fechado), borderColor:'#14b8a6', backgroundColor:'rgba(20,184,166,0.1)', fill:true }] });
+}
+
+function renderChart(id, type, cfg){
+    if(STATE.charts[id]) { STATE.charts[id].destroy(); delete STATE.charts[id]; }
+    const ctx = document.getElementById(id); if(!ctx) return;
+    const opts = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:(type==='bar'&&cfg.datasets.length>1)||id==='ocsDiarizado', position:'bottom' } }, scales:{ y:{ beginAtZero:true } } };
+    if(type==='doughnut'){ opts.scales={}; opts.cutout='65%'; opts.plugins.legend.display=false; }
+    if(cfg.indexAxis==='y'){ opts.indexAxis='y'; opts.scales.y.grid={display:false}; opts.plugins.legend.display=false; }
+    STATE.charts[id] = new Chart(ctx, { type:type, data:cfg, options:opts });
+}
+function setText(id, v){ const el=document.getElementById(id); if(el) el.textContent=v!==undefined?v:'-'; }
+function updateLabel(t){ document.getElementById('lastUpdate').textContent=t; }
+async function exportPNG(){ const el=document.getElementById('dashboard'); const c=await html2canvas(el,{scale:2,useCORS:true}); const a=document.createElement('a'); a.href=c.toDataURL(); a.download='painel.png'; a.click(); }

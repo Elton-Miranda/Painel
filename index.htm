@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WAR ROOM - ABILITY_SJ</title>
+  <title>WAR ROOM - ABILITY</title>
   
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -13,7 +13,7 @@
 <body>
   <header class="header">
     <div class="header-top">
-      <h1>WAR ROOM <span class="brand-tag">ABILITY_SJ</span></h1>
+      <h1>WAR ROOM <span class="brand-tag">ABILITY</span></h1>
       <small id="lastUpdate">Conectando API...</small>
     </div>
     
@@ -59,20 +59,21 @@
   <main id="dashboard" style="padding: 20px;">
     
     <div id="print-section-charts">
+        
         <div class="row-container">
-            <div class="col-half card">
+            <div class="col-half card card-backlog">
                 <div class="card-header"><h3>Backlog Litoral (Acumulado)</h3><span id="valBackLit" class="card-value">0</span></div>
-                <div style="display:flex; align-items: flex-start;">
+                <div class="backlog-content">
                     <div style="width:40%; position:relative;"><canvas id="chartBackLit"></canvas></div>
-                    <div class="list-container" id="listBackLit" style="width:60%; border-left:1px solid #f3e8ff;"></div>
+                    <div class="backlog-list-area" id="listBackLit"></div>
                 </div>
             </div>
 
-            <div class="col-half card">
+            <div class="col-half card card-backlog">
                 <div class="card-header"><h3>Backlog SJC (Acumulado)</h3><span id="valBackSJC" class="card-value">0</span></div>
-                <div style="display:flex; align-items: flex-start;">
+                <div class="backlog-content">
                     <div style="width:40%; position:relative;"><canvas id="chartBackSJC"></canvas></div>
-                    <div class="list-container" id="listBackSJC" style="width:60%; border-left:1px solid #f3e8ff;"></div>
+                    <div class="backlog-list-area" id="listBackSJC"></div>
                 </div>
             </div>
         </div>
@@ -106,7 +107,7 @@
     <div id="print-section-details">
         <div class="row-container">
             <div class="col-half card" style="border-top: 4px solid #be123c;">
-                <div class="card-header"><h3 style="color:#be123c">Críticos > 24h Litoral</h3></div>
+                <div class="card-header"><h3 style="color:#be123c">Críticos > 24h (Litoral)</h3></div>
                 <div class="table-responsive">
                     <table class="data-table" id="tableCritLit">
                         <thead>
@@ -123,7 +124,7 @@
             </div>
 
             <div class="col-half card" style="border-top: 4px solid #be123c;">
-                <div class="card-header"><h3 style="color:#be123c">Críticos > 24h SJC</h3></div>
+                <div class="card-header"><h3 style="color:#be123c">Críticos > 24h (SJC)</h3></div>
                 <div class="table-responsive">
                     <table class="data-table" id="tableCritSJC">
                         <thead>

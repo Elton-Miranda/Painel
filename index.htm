@@ -51,7 +51,7 @@
       </div>
       <div class="header-actions">
         <button id="refreshBtn" title="Atualizar">↻</button>
-        <button id="exportPngBtn" title="Salvar Imagens">💾 Salvar</button>
+        <button id="exportPngBtn" title="Salvar Imagens">📸 Salvar</button>
       </div>
     </div>
   </header>
@@ -62,17 +62,21 @@
         
         <div class="row-container">
             <div class="col-half card card-backlog">
-                <div class="card-header"><h3>Backlog Litoral (Acumulado)</h3><span id="valBackLit" class="card-value">0</span></div>
+                <div class="card-header">
+                    <h3>Backlog Litoral (Acumulado)</h3>
+                    </div>
                 <div class="backlog-content">
-                    <div style="width:40%; position:relative;"><canvas id="chartBackLit"></canvas></div>
+                    <div class="backlog-display-large" id="valBackLitLarge">0</div>
                     <div class="backlog-list-area" id="listBackLit"></div>
                 </div>
             </div>
 
             <div class="col-half card card-backlog">
-                <div class="card-header"><h3>Backlog SJC (Acumulado)</h3><span id="valBackSJC" class="card-value">0</span></div>
+                <div class="card-header">
+                    <h3>Backlog SJC (Acumulado)</h3>
+                </div>
                 <div class="backlog-content">
-                    <div style="width:40%; position:relative;"><canvas id="chartBackSJC"></canvas></div>
+                    <div class="backlog-display-large" id="valBackSJCLarge">0</div>
                     <div class="backlog-list-area" id="listBackSJC"></div>
                 </div>
             </div>

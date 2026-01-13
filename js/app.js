@@ -1,4 +1,4 @@
-/* js/app.js - Gráfico de Linhas com Valores (Labels) */
+/* js/app.js - Sem Gráfico de Donut no Backlog */
 
 const API_CONFIG = {
     url: 'https://ed6e25dfd9c38eb3-177-76-129-215.serveousercontent.com/api/dados',
@@ -6,18 +6,16 @@ const API_CONFIG = {
     pass: 'visio'
 };
 
-// Cores Institucionais
 const THEME = {
-    primary: '#660099',      // Roxo
-    primaryLight: '#a855f7', // Roxo Claro
-    gray: '#cbd5e1',         // Cinza
-    green: '#10b981',        // Verde
-    red: '#ef4444'           // Vermelho
+    primary: '#660099',
+    primaryLight: '#a855f7',
+    gray: '#cbd5e1',
+    green: '#10b981',
+    red: '#ef4444'
 };
 
 const STATE = { charts: {}, globalData: null, currentYear: null };
 
-// Importante: Registrar o plugin de DataLabels
 try { Chart.register(ChartDataLabels); } catch(e){}
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,7 +47,6 @@ async function fetchApiData() {
         lbl.style.color = "#ef4444";
     }
 
-    // Fusão com Histórico
     if (typeof window.HISTORICO_STATIC !== 'undefined') {
         const local = window.HISTORICO_STATIC;
         if (!apiData.history) apiData.history = {};
@@ -142,16 +139,16 @@ function loadHistoryData(y, m) {
 }
 
 function renderDash(d) {
-    // Backlog
+    // --- BACKLOG (ALTERADO PARA NÚMERO GRANDE) ---
     const bLit = d.backlog_litoral ? d.backlog_litoral.total_backlog : 0;
-    renderDonutSingle('chartBackLit', bLit, THEME.primary, 'LITORAL');
+    setText('valBackLitLarge', bLit); // Usa a nova DIV grande
     renderOfensoresList('listBackLit', d.oc_por_at_litoral);
-    setText('valBackLit', bLit);
+    // setText('valBackLit', bLit); // Removido o pequeno do header
 
     const bSJC = d.backlog_sjc ? d.backlog_sjc.total_backlog : 0;
-    renderDonutSingle('chartBackSJC', bSJC, THEME.primary, 'SJC');
+    setText('valBackSJCLarge', bSJC); // Usa a nova DIV grande
     renderOfensoresList('listBackSJC', d.oc_por_at_sjc);
-    setText('valBackSJC', bSJC);
+    // setText('valBackSJC', bSJC); // Removido o pequeno do header
 
     // Status
     const stLit = d.status_litoral || {em_andamento:0, nao_iniciada:0, encerrada:0};
@@ -180,7 +177,7 @@ function renderDash(d) {
     renderSimpleList('listVipLit', d.vips_litoral || []);
     renderSimpleList('listVipSJC', d.vips_sjc || []);
 
-    // Evolução (Com Rótulos Ativados)
+    // Evolução
     renderTimelineSLA('chartTimelineSLA', d.ocs_diarizado || []);
 }
 
@@ -222,18 +219,14 @@ function renderTimelineSLA(canvasId, items) {
             responsive: true, maintainAspectRatio: false,
             plugins: { 
                 legend: { position: 'top' },
-                // --- CONFIGURAÇÃO DOS RÓTULOS (VALORES) ---
                 datalabels: { 
-                    display: true, 
-                    align: 'top', 
-                    anchor: 'end',
-                    offset: 4,
-                    color: function(context) { return context.dataset.borderColor; }, // Cor igual a da linha
+                    display: true, align: 'top', anchor: 'end', offset: 4,
+                    color: function(context) { return context.dataset.borderColor; },
                     font: { weight: 'bold', size: 11 },
-                    formatter: (v) => v > 0 ? v : '' // Mostra apenas se > 0
+                    formatter: (v) => v > 0 ? v : ''
                 }
             },
-            layout: { padding: { top: 20 } }, // Espaço extra para o rótulo não cortar
+            layout: { padding: { top: 20 } },
             scales: { y: { beginAtZero: true, grid: { borderDash: [5,5] } }, x: { grid: { display: false } } }
         }
     });
@@ -261,14 +254,8 @@ function calculateDuration(dtOpenStr) { try { const start = new Date(dtOpenStr);
 function renderSimpleList(id, items) { const el = document.getElementById(id); if (!items || !items.length) { el.innerHTML='<div style="color:#ccc;text-align:center;padding:20px">Nenhum Caso</div>'; return; } el.innerHTML = items.map(i => `<div class="list-item"><div><b>${i.id}</b></div><div>${i.vip?'💎':'🎯'}</div></div>`).join(''); }
 function destroy(id) { if(STATE.charts[id]) { STATE.charts[id].destroy(); delete STATE.charts[id]; } }
 
-function renderDonutSingle(id, val, color, txt) {
-    destroy(id);
-    STATE.charts[id] = new Chart(document.getElementById(id), {
-        type: 'doughnut', data: { labels:[txt], datasets:[{ data:[1], backgroundColor:[color], borderWidth:0 }] },
-        options: { cutout:'75%', events:[], plugins:{ legend:{display:false}, datalabels:{display:false}, tooltip:{enabled:false} } },
-        plugins: [{id:'center',beforeDraw:(c)=>{const ctx=c.ctx,w=c.width,h=c.height;ctx.restore();ctx.font="bold 1.2em sans-serif";ctx.textBaseline="middle";ctx.textAlign="center";ctx.fillStyle=color;ctx.fillText(val,w/2,h/2);ctx.save();}}]
-    });
-}
+// FUNÇÃO renderDonutSingle REMOVIDA POIS NÃO É MAIS USADA
+
 function renderDonutMulti(id, vals, lbls, colors) {
     destroy(id);
     const total = vals.reduce((a,b)=>a+b,0);
